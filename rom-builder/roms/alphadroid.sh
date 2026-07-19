@@ -1,0 +1,22 @@
+ROM_NAME=alphadroid
+MANIFEST_URL="https://github.com/alphadroid-project/manifest"
+MANIFEST_BRANCH="alpha-16.2"
+LUNCH_CMD="breakfast alpha_${DEVICE} user"
+BUILD_CMD="brunch alpha_${DEVICE} user"
+HAS_GAPPS=1
+NEEDS_TREE_EDIT=1
+MK_FLAGS=(
+  "TARGET_FACE_UNLOCK_SUPPORTED := true"
+  "ALPHA_VERSION_APPEND_TIME_OF_DAY := true"
+  "TARGET_BUILD_PACKAGE := 3"
+  "TARGET_INCLUDE_GOOGLE_COMMS := true"
+  "TARGET_INCLUDE_PIXEL_LAUNCHER := true"
+  "TARGET_SUPPORTS_CALL_RECORDING := true"
+  "TARGET_INCLUDE_STOCK_ARCORE := true"
+  "TARGET_INCLUDE_LIVE_WALLPAPERS := true"
+  "TARGET_SUPPORTS_GOOGLE_RECORDER := true"
+  "TARGET_INCLUDE_SIMPLE_TUNE := true"
+  "ALPHA_MAINTAINER := R"
+)
+PROP_FLAGS=()
+build_alphadroid() { build_generic alphadroid; }
