@@ -4,8 +4,10 @@ MANIFEST_BRANCH="16.2"
 LUNCH_CMD="mistify ${DEVICE} user"
 BUILD_CMD="mist b"
 HAS_GAPPS=0
-NEEDS_TREE_EDIT=1
-MK_FLAGS=("MISTOS_MAINTAINER := \"R\"")
+NEEDS_TREE_EDIT=0
+MK_FLAGS=(
+  "MISTOS_MAINTAINER := \"R\""
+)
 PROP_FLAGS=(
   "ro.mist.display=1200 x 1920, 60 hz"
   "ro.mist.battery=10000mah"

@@ -18,7 +18,7 @@ send_tg_notification() {
   [[ "$zip_name" != "-" ]] && msg+="📦 $zip_name ($zip_size)"$'\n'
   [[ -n "$url" ]] && msg+="🔗 $url"$'\n'
   [[ -n "$duration" ]] && msg+="🕐 ${duration}s"$'\n'
-  [[ -n "$errors" ]] && msg+=$'\n'"<code>$errors</code>"
+  [[ -n "$errors" ]] && msg+=$'\n'"<pre>$(echo "$errors" | python3 -c 'import sys,html; print(html.escape(sys.stdin.read()))')</pre>"
 
   local result
   result=$(curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \

@@ -1,22 +1,30 @@
 ROM_NAME=alphadroid
+ROM_PREFIX="alpha"
 MANIFEST_URL="https://github.com/alphadroid-project/manifest"
 MANIFEST_BRANCH="alpha-16.2"
-LUNCH_CMD="breakfast alpha_${DEVICE} user"
-BUILD_CMD="brunch alpha_${DEVICE} user"
+LUNCH_CMD="lunch alpha_${DEVICE}-user"
+BUILD_CMD="m bacon"
 HAS_GAPPS=1
 NEEDS_TREE_EDIT=1
 MK_FLAGS=(
+  "TARGET_HAS_UDFPS := true"
+  "TARGET_ENABLE_BLUR := true"
+  "TARGET_EXCLUDES_AUDIOFX := true"
   "TARGET_FACE_UNLOCK_SUPPORTED := true"
-  "ALPHA_VERSION_APPEND_TIME_OF_DAY := true"
+  "ALPHA_VERSION_APPEND_TIME_OF_DAY := false"
   "TARGET_BUILD_PACKAGE := 3"
   "TARGET_INCLUDE_GOOGLE_COMMS := true"
   "TARGET_INCLUDE_PIXEL_LAUNCHER := true"
+  "TARGET_SUPPORTS_QUICK_TAP := true"
   "TARGET_SUPPORTS_CALL_RECORDING := true"
-  "TARGET_INCLUDE_STOCK_ARCORE := true"
-  "TARGET_INCLUDE_LIVE_WALLPAPERS := true"
-  "TARGET_SUPPORTS_GOOGLE_RECORDER := true"
+  "TARGET_INCLUDE_STOCK_ARCORE := false"
+  "TARGET_INCLUDE_LIVE_WALLPAPERS := false"
+  "TARGET_SUPPORTS_GOOGLE_RECORDER := false"
+  "TARGET_INCLUDE_MATLOG := false"
+  "WITH_ADB_INSECURE := false"
   "TARGET_INCLUDE_SIMPLE_TUNE := true"
   "ALPHA_MAINTAINER := R"
+  "ALPHA_BUILD_TYPE := Official"
 )
 PROP_FLAGS=()
 build_alphadroid() { build_generic alphadroid; }

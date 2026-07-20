@@ -25,8 +25,22 @@ rom-builder -- build custom ROMs for $DEVICE ($CODENAME)
 EOF
 }
 
+clean_prev_source() {
+  local rom="$1"
+  if [[ -f "$HERE/.last_rom" ]]; then
+    local prev; prev=$(cat "$HERE/.last_rom")
+    if [[ "$prev" != "$rom" && -d "$(rom_root "$prev")" ]]; then
+      warn "cleaning previous source: $prev"
+      rm -rf "$(rom_root "$prev")"
+    fi
+  fi
+  echo "$rom" > "$HERE/.last_rom"
+}
+
 cmd_build() {
-  local rom="$1"; load_rom "$rom"
+  local rom="$1"
+  clean_prev_source "$rom"
+  load_rom "$rom"
   "build_${rom}" "$rom" || { err "$rom FAILED"; return 1; }
 }
 
@@ -38,6 +52,7 @@ cmd_build_all() {
   done
   ok "BUILT: ${built[*]:-none}"
   [[ ${#failed[@]} -gt 0 ]] && err "FAILED: ${failed[*]}"
+  rm -f "$HERE/.last_rom"
 }
 
 cmd_status() {
@@ -59,6 +74,7 @@ cmd_upload() {
 
 cmd_skip() {
   local rom="$1"
+  clean_prev_source "$rom"
   set_state "$rom" "SKIPPED"
   local track="$HERE/BUILD_TRACKING.md"
   printf "| %s | %s | SKIPPED | - | - | - | %s |\n" "$(date +%Y-%m-%d)" "$rom" "unbuildable - ROM source edit required" >> "$track"

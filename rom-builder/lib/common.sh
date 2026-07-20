@@ -50,20 +50,39 @@ patch_mk() {
   local rom="$1" mkfile="$2"; shift 2
   local root; root=$(rom_root "$rom")
   local f="$root/$DEVICE_TREE/$mkfile"
-  [[ -f "$f" ]] || { warn "$mkfile not found in device tree"; return 0; }
+  if [[ ! -f "$f" ]]; then
+    local fallback="$root/$DEVICE_TREE/lineage_${DEVICE}.mk"
+    if [[ -f "$fallback" ]]; then
+      f="$fallback"
+    else
+      warn "neither $mkfile nor lineage_${DEVICE}.mk found in device tree"
+      return 0
+    fi
+  fi
   while [[ $# -gt 0 ]]; do
     grep -qF "$1" "$f" || echo "$1" >> "$f"
     shift
   done
 }
 
-patch_prop() {
-  local rom="$1"; shift
+patch_mk_props() {
+  local rom="$1" mkfile="$2"; shift 2
   local root; root=$(rom_root "$rom")
-  local f="$root/$DEVICE_TREE/system.prop"
-  touch "$f"
+  local f="$root/$DEVICE_TREE/$mkfile"
+  if [[ ! -f "$f" ]]; then
+    local fallback="$root/$DEVICE_TREE/lineage_${DEVICE}.mk"
+    [[ -f "$fallback" ]] && f="$fallback" || { warn ".mk not found for props"; return 0; }
+  fi
+  grep -qF "PRODUCT_PROPERTY_OVERRIDES" "$f" && return 0
+  { echo ""; echo "# Device properties"; echo "PRODUCT_PROPERTY_OVERRIDES += \\"; } >> "$f"
+  local i=0 last=$(($# - 1))
   while [[ $# -gt 0 ]]; do
-    grep -qF "$1" "$f" || echo "$1" >> "$f"
+    if [[ $i -lt $last ]]; then
+      echo "    $1 \\" >> "$f"
+    else
+      echo "    $1" >> "$f"
+    fi
+    ((i++))
     shift
   done
 }
@@ -92,16 +111,23 @@ build_generic() {
   [[ "$needs_tree" == 1 ]] && adapt_tree "$rom"
   setup_keys "$rom"
 
+  local pref="${ROM_PREFIX:-$rom}"
   local mkf=("${MK_FLAGS[@]:-}") ppf=("${PROP_FLAGS[@]:-}")
-  [[ ${#mkf[@]} -gt 0 ]] && patch_mk "$rom" "${rom}_${DEVICE}.mk" "${mkf[@]}"
-  [[ ${#ppf[@]} -gt 0 ]] && patch_prop "$rom" "${ppf[@]}"
+  [[ ${#mkf[@]} -gt 0 ]] && patch_mk "$rom" "${pref}_${DEVICE}.mk" "${mkf[@]}"
+  [[ ${#ppf[@]} -gt 0 ]] && patch_mk_props "$rom" "${pref}_${DEVICE}.mk" "${ppf[@]}"
 
   set_state "$rom" "BUILDING"
   BUILD_START=$SECONDS
 
+  # Pre-build hook for ROMs needing envsetup-based sync
+  if [[ -n "${PRE_BUILD:-}" ]]; then
+    log "running pre-build: $PRE_BUILD"
+    (set +u; cd "$root" && source build/envsetup.sh && eval "$PRE_BUILD") 2>&1 | tail -10
+  fi
+
   run_build() {
     local rom="$1" l="$2" b="$3"
-    (set +u; source build/envsetup.sh && eval "$l" && eval "$b") 2>&1 | tee -a "$(rom_log "$rom")" | tail -60
+    (set +u; cd "$root" && source build/envsetup.sh && eval "$l" && eval "$b") 2>&1 | tee -a "$(rom_log "$rom")" | tail -60
     return ${PIPESTATUS[0]}
   }
   run_build "$rom" "$LUNCH_CMD" "$BUILD_CMD"
@@ -109,7 +135,7 @@ build_generic() {
   if vndk_fix_if_needed "$rom"; then
     warn "vndk fix applied -- running installclean + rebuild"
     BUILD_START=$SECONDS
-    (set +u; make installclean) 2>&1 | tail -5
+    (set +u; source build/envsetup.sh && m installclean) 2>&1 | tail -5
     run_build "$rom" "$LUNCH_CMD" "$BUILD_CMD"
   fi
 
